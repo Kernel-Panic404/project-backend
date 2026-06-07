@@ -1,0 +1,56 @@
+version: '3.9'
+
+# ============================================================
+# Proyecto Mentora - Docker Compose
+# Levanta: PostgreSQL + Django REST API
+# ============================================================
+
+services:
+
+  # ----------------------------------------------------------
+  # Base de datos PostgreSQL
+  # ----------------------------------------------------------
+  db:
+    image: postgres:15-alpine
+    container_name: mentora_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: mentora_db
+      POSTGRES_USER: mentora_user
+      POSTGRES_PASSWORD: mentora_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mentora_user -d mentora_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------------------------
+  # Aplicación Django
+  # ----------------------------------------------------------
+  web:
+    build: .
+    container_name: mentora_web
+    restart: unless-stopped
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SECRET_KEY: django-insecure-clave-solo-para-desarrollo
+      DEBUG: "True"
+      DB_NAME: mentora_db
+      DB_USER: mentora_user
+      DB_PASSWORD: mentora_pass
+      DB_HOST: db
+      DB_PORT: "5432"
+
+volumes:
+  postgres_data:
