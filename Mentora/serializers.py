@@ -1,7 +1,4 @@
-"""
-Serializadores del módulo de usuarios.
-Convierten instancias de modelos a JSON y viceversa.
-"""
+
 from rest_framework import serializers
 from .models import Rol, Usuario, UsuarioRol
 
