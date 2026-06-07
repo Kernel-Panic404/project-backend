@@ -1,15 +1,9 @@
 version: '3.9'
 
-# ============================================================
-# Proyecto Mentora - Docker Compose
-# Levanta: PostgreSQL + Django REST API
-# ============================================================
 
 services:
 
-  # ----------------------------------------------------------
-  # Base de datos PostgreSQL
-  # ----------------------------------------------------------
+ 
   db:
     image: postgres:15-alpine
     container_name: mentora_db
@@ -28,9 +22,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # ----------------------------------------------------------
-  # Aplicación Django
-  # ----------------------------------------------------------
+ 
   web:
     build: .
     container_name: mentora_web
