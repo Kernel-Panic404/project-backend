@@ -1,7 +1,4 @@
-"""
-Configuración principal del proyecto Mentora.
-Usa variables de entorno para separar config de código.
-"""
+
 import os
 from decouple import config
 
@@ -18,9 +15,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # Librerías externas
     'rest_framework',
-    # Apps del proyecto Mentora
     'usuarios',
     'tutorias',
 ]
@@ -55,7 +50,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# Base de datos PostgreSQL
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
