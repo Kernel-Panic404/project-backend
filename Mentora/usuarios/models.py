@@ -16,6 +16,15 @@ class Usuario(models.Model):
     apellido = models.CharField(max_length=100)
     correo = models.CharField(max_length=150)
     password_hash = models.CharField(max_length=255)
+
+    rol = models.ForeignKey(
+        Rol,
+        on_delete=models.PROTECT,
+        related_name="usuarios",
+        null=True,
+        blank=True
+    )
+
     activo = models.BooleanField(default=True)
     creado_en = models.DateTimeField(auto_now_add=True)
 

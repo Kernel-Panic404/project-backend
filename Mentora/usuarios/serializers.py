@@ -13,7 +13,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Usuario
-        fields = ["id", "nombre", "apellido", "correo", "activo", "creado_en", "nombre_completo"]
+        fields = ["id", "nombre", "apellido", "correo", "rol", "activo", "creado_en", "nombre_completo"]
 
     def get_nombre_completo(self, obj):
         return obj.nombre_completo()
