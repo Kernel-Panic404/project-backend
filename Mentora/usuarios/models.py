@@ -47,6 +47,15 @@ class Usuario(models.Model):
     apellido = models.CharField(max_length=100)
     correo = models.CharField(max_length=150, unique=True)
     password_hash = models.CharField(max_length=255)
+
+    rol = models.ForeignKey(
+        Rol,
+        on_delete=models.PROTECT,
+        related_name="usuarios",
+        null=True,
+        blank=True
+    )
+
     activo = models.BooleanField(default=True)
     rol = models.CharField(max_length=20, choices=ROLE_CHOICES, default="estudiante")
     creado_en = models.DateTimeField(auto_now_add=True)
@@ -67,21 +76,3 @@ class Usuario(models.Model):
 
     def esta_activo(self):
         return self.activo
-
-    def set_password(self, raw_password):
-        self.password_hash = make_password(raw_password)
-
-    def verify_password(self, raw_password):
-        return check_password(raw_password, self.password_hash)
-
-
-class TokenRevocado(models.Model):
-    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
-    token = models.TextField()
-    revocado_en = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        db_table = "token_revocado"
-
-    def __str__(self):
-        return f"Token revocado - {self.usuario.correo}"
