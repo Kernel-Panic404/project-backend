@@ -77,6 +77,9 @@ class Usuario(models.Model):
     def nombre_completo(self):
         return f"{self.nombre} {self.apellido}"
 
+    def esta_activo(self):
+        return self.activo
+
     def set_password(self, raw_password):
         self.password_hash = make_password(raw_password)
 
