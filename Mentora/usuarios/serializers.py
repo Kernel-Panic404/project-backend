@@ -2,21 +2,21 @@ from rest_framework import serializers
 from .models import Rol, Usuario, Permiso
 
 
-class PermisoSerializer(serializers.ModelSerializer):
+class PermissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Permiso
         fields = ["id", "nombre", "descripcion"]
 
 
-class RolSerializer(serializers.ModelSerializer):
-    permisos = PermisoSerializer(many=True, read_only=True)
+class RoleSerializer(serializers.ModelSerializer):
+    permisos = PermissionSerializer(many=True, read_only=True)
 
     class Meta:
         model = Rol
         fields = ["id", "nombre", "permisos"]
 
 
-class UsuarioSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     nombre_completo = serializers.SerializerMethodField()
     rol_display = serializers.CharField(source="get_rol_display", read_only=True)
 
@@ -38,12 +38,12 @@ class LoginSerializer(serializers.Serializer):
         from .services import AuthService
         usuario = AuthService.authenticate_user(correo, password)
         if not usuario:
-            raise serializers.ValidationError("Credenciales inválidas o usuario inactivo.")
+            raise serializers.ValidationError("Invalid credentials or inactive user.")
         data["usuario"] = usuario
         return data
 
 
-class UsuarioCreacionSerializer(serializers.ModelSerializer):
+class UserCreationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
 
     class Meta:

@@ -13,14 +13,14 @@ class CustomJWTAuthentication(BaseAuthentication):
         payload = AuthService.validate_token(token)
         
         if not payload:
-            raise AuthenticationFailed('Token inválido o expirado.')
+            raise AuthenticationFailed('Invalid or expired token.')
             
         try:
             usuario = Usuario.objects.get(id=payload.get('user_id'))
         except Usuario.DoesNotExist:
-            raise AuthenticationFailed('Usuario no encontrado.')
+            raise AuthenticationFailed('User not found.')
             
         if AuthService.is_token_revoked(usuario, token):
-            raise AuthenticationFailed('Token revocado.')
+            raise AuthenticationFailed('Token revoked.')
             
         return (usuario, token)
