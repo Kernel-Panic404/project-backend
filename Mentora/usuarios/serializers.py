@@ -1,7 +1,5 @@
 from rest_framework import serializers
 from .models import Rol, Usuario, Permiso
-
-
 class PermissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Permiso
@@ -26,8 +24,6 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_nombre_completo(self, obj):
         return obj.nombre_completo()
-
-
 class LoginSerializer(serializers.Serializer):
     correo = serializers.EmailField()
     password = serializers.CharField(write_only=True)
