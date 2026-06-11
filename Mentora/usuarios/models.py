@@ -57,7 +57,6 @@ class Usuario(models.Model):
     )
 
     activo = models.BooleanField(default=True)
-    rol = models.CharField(max_length=20, choices=ROLE_CHOICES, default="estudiante")
     creado_en = models.DateTimeField(auto_now_add=True)
     actualizado_en = models.DateTimeField(auto_now=True)
 

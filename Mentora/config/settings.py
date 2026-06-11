@@ -18,6 +18,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'usuarios',
     'tutorias',
+    'cuestionarios',
 ]
 
 MIDDLEWARE = [
@@ -53,12 +54,8 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME', default='mentora_db'),
-        'USER': config('DB_USER', default='mentora_user'),
-        'PASSWORD': config('DB_PASSWORD', default='mentora_pass'),
-        'HOST': config('DB_HOST', default='db'),
-        'PORT': config('DB_PORT', default='5432'),
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
 
