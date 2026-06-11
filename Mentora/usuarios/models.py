@@ -59,6 +59,10 @@ class Usuario(models.Model):
     activo = models.BooleanField(default=True)
     creado_en = models.DateTimeField(auto_now_add=True)
     actualizado_en = models.DateTimeField(auto_now=True)
+    
+    @property
+    def is_authenticated(self):
+        return True
 
     class Meta:
         db_table = "usuario"
@@ -75,3 +79,18 @@ class Usuario(models.Model):
 
     def esta_activo(self):
         return self.activo
+
+    def set_password(self, raw_password):
+        self.password_hash = make_password(raw_password)
+
+    def verify_password(self, raw_password):
+        return check_password(raw_password, self.password_hash)
+
+
+class TokenRevocado(models.Model):
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    token = models.CharField(max_length=500)
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "token_revocado"

@@ -2,17 +2,17 @@ from django.urls import path
 from .views import (
     LoginView,
     LogoutView,
-    UsuarioCreateView,
-    UsuarioListView,
-    UsuarioDetailView,
-    UsuarioDeleteView,
+    UserCreateView,
+    UserListView,
+    UserDetailView,
+    UserDeleteView,
 )
 
 urlpatterns = [
     path("login/", LoginView.as_view(), name="login"),
     path("logout/", LogoutView.as_view(), name="logout"),
-    path("register/", UsuarioCreateView.as_view(), name="register"),
-    path("", UsuarioListView.as_view(), name="usuario-list"),
-    path("<int:usuario_id>/", UsuarioDetailView.as_view(), name="usuario-detail"),
-    path("<int:usuario_id>/delete/", UsuarioDeleteView.as_view(), name="usuario-delete"),
+    path("register/", UserCreateView.as_view(), name="register"),
+    path("", UserListView.as_view(), name="user-list"),
+    path("<int:user_id>/", UserDetailView.as_view(), name="user-detail"),
+    path("<int:user_id>/delete/", UserDeleteView.as_view(), name="user-delete"),
 ]
