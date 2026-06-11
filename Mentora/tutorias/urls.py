@@ -7,6 +7,9 @@ from .views import (
     TutoringSessionViewSet,
     TutoringParticipationViewSet,
     TutorSubjectViewSet,
+    SessionRecordViewSet,
+    AttendanceViewSet,
+    StudentHistoryView,
 )
 
 router = DefaultRouter()
@@ -16,7 +19,10 @@ router.register(r"availability-exceptions", AvailabilityExceptionViewSet)
 router.register(r"sessions", TutoringSessionViewSet)
 router.register(r"participations", TutoringParticipationViewSet)
 router.register(r"tutor-subjects", TutorSubjectViewSet)
+router.register(r"session-records", SessionRecordViewSet)
+router.register(r"attendance", AttendanceViewSet)
 
 urlpatterns = [
     path("", include(router.urls)),
+    path("history/student/<int:student_id>/", StudentHistoryView.as_view(), name="student-history"),
 ]
