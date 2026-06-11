@@ -82,7 +82,7 @@ class UsuarioDetailView(APIView):
     def put(self, request, usuario_id):
         try:
             usuario = Usuario.objects.get(pk=usuario_id)
-            if request.user.id != usuario_id and request.user.rol != "admin":
+            if request.user.id != usuario_id and not (request.user.rol and request.user.rol.nombre == "admin"):
                 return Response(
                     {"error": "No tiene permisos para actualizar este usuario."},
                     status=status.HTTP_403_FORBIDDEN,
@@ -104,7 +104,7 @@ class UsuarioDeleteView(APIView):
 
     def delete(self, request, usuario_id):
         try:
-            if request.user.rol != "admin":
+            if not (request.user.rol and request.user.rol.nombre == "admin"):
                 return Response(
                     {"error": "Solo administradores pueden eliminar usuarios."},
                     status=status.HTTP_403_FORBIDDEN,
