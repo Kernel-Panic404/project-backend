@@ -1,8 +1,13 @@
 from rest_framework import viewsets, generics
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
+from rest_framework.response import Response
+
+from .services import generate_session_reminders
 
 from usuarios.permissions import IsTutor, IsAdmin
 from .models import (
+    Notification,
     Subject,
     TutorAvailability,
     AvailabilityException,
@@ -13,6 +18,7 @@ from .models import (
     Attendance,
 )
 from .serializers import (
+    NotificationSerializer,
     SubjectSerializer,
     TutorAvailabilitySerializer,
     AvailabilityExceptionSerializer,
@@ -102,3 +108,26 @@ class StudentHistoryView(generics.ListAPIView):
         session_ids = participations.values_list('session_id', flat=True)
         # Return the corresponding sessions
         return TutoringSession.objects.filter(id__in=session_ids).order_by('-date', '-start_time')
+
+class GenerateReminderView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+
+        total = generate_session_reminders()
+
+        return Response({
+            "message": "Recordatorios generados",
+            "total": total
+        })
+    
+class NotificationListView(generics.ListAPIView):
+
+    serializer_class = NotificationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Notification.objects.filter(
+            user=self.request.user
+        )

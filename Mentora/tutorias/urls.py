@@ -1,6 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
+    NotificationListView,
     SubjectViewSet,
     TutorAvailabilityViewSet,
     AvailabilityExceptionViewSet,
@@ -10,6 +11,7 @@ from .views import (
     SessionRecordViewSet,
     AttendanceViewSet,
     StudentHistoryView,
+    GenerateReminderView,
 )
 
 router = DefaultRouter()
@@ -25,4 +27,6 @@ router.register(r"attendance", AttendanceViewSet)
 urlpatterns = [
     path("", include(router.urls)),
     path("history/student/<int:student_id>/", StudentHistoryView.as_view(), name="student-history"),
+    path("reminders/generate/", GenerateReminderView.as_view(), name="generate-reminders"),
+    path("notifications/", NotificationListView.as_view(), name="notifications"),
 ]

@@ -8,6 +8,7 @@ from .models import (
     TutorSubject,
     SessionRecord,
     Attendance,
+    Notification,
 )
 
 
@@ -56,4 +57,10 @@ class SessionRecordSerializer(serializers.ModelSerializer):
 class AttendanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Attendance
+        fields = "__all__"
+
+class NotificationSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Notification
         fields = "__all__"
