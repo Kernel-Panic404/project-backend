@@ -1,6 +1,7 @@
 from django.db import models
 from usuarios.models import Usuario
 
+
 class Subject(models.Model):
     name = models.CharField(max_length=100)
     code = models.CharField(max_length=20, unique=True)
@@ -8,6 +9,7 @@ class Subject(models.Model):
 
     class Meta:
         db_table = "materia"
+
 
 class TutorAvailability(models.Model):
     tutor = models.ForeignKey(Usuario, on_delete=models.CASCADE)
@@ -19,6 +21,7 @@ class TutorAvailability(models.Model):
     class Meta:
         db_table = "disponibilidad_tutor"
 
+
 class AvailabilityException(models.Model):
     tutor = models.ForeignKey(Usuario, on_delete=models.CASCADE)
     exception_date = models.DateField()
@@ -27,6 +30,7 @@ class AvailabilityException(models.Model):
 
     class Meta:
         db_table = "disponibilidad_excepcion"
+
 
 class TutoringSession(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True)
@@ -43,6 +47,7 @@ class TutoringSession(models.Model):
     class Meta:
         db_table = "tutoria"
 
+
 class TutoringParticipation(models.Model):
     session = models.ForeignKey(TutoringSession, on_delete=models.CASCADE)
     user = models.ForeignKey(Usuario, on_delete=models.CASCADE)
@@ -51,12 +56,14 @@ class TutoringParticipation(models.Model):
     class Meta:
         db_table = "participacion_tutoria"
 
+
 class TutorSubject(models.Model):
     tutor = models.ForeignKey(Usuario, on_delete=models.CASCADE)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
 
     class Meta:
         db_table = "tutor_materia"
+
 
 class SessionRecord(models.Model):
     session = models.OneToOneField(TutoringSession, on_delete=models.CASCADE)
@@ -68,6 +75,7 @@ class SessionRecord(models.Model):
     class Meta:
         db_table = "registro_sesion"
 
+
 class Attendance(models.Model):
     session = models.ForeignKey(TutoringSession, on_delete=models.CASCADE)
     user = models.ForeignKey(Usuario, on_delete=models.CASCADE)
@@ -76,6 +84,7 @@ class Attendance(models.Model):
 
     class Meta:
         db_table = "asistencia"
+
 
 class Notification(models.Model):
     session = models.ForeignKey(TutoringSession, on_delete=models.CASCADE)
