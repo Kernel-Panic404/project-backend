@@ -2,6 +2,7 @@ from django.db import models
 from usuarios.models import Usuario
 from tutorias.models import Subject
 
+
 class Questionnaire(models.Model):
     teacher = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, related_name='questionnaires')
     subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True)
@@ -15,6 +16,7 @@ class Questionnaire(models.Model):
     class Meta:
         db_table = "cuestionario"
 
+
 class Question(models.Model):
     questionnaire = models.ForeignKey(Questionnaire, on_delete=models.CASCADE)
     statement = models.TextField()
@@ -25,6 +27,7 @@ class Question(models.Model):
     class Meta:
         db_table = "pregunta"
 
+
 class QuestionOption(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     text = models.CharField(max_length=255)
@@ -32,6 +35,7 @@ class QuestionOption(models.Model):
 
     class Meta:
         db_table = "opcion_pregunta"
+
 
 class QuestionnaireResult(models.Model):
     questionnaire = models.ForeignKey(Questionnaire, on_delete=models.CASCADE)
@@ -41,6 +45,7 @@ class QuestionnaireResult(models.Model):
 
     class Meta:
         db_table = "resultado_cuestionario"
+
 
 class QuestionnaireResponse(models.Model):
     questionnaire = models.ForeignKey(Questionnaire, on_delete=models.CASCADE)

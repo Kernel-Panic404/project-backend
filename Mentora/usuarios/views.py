@@ -8,7 +8,6 @@ from .serializers import (
     LoginSerializer,
     UserSerializer,
     UserCreationSerializer,
-    TokenSerializer,
 )
 from .services import AuthService
 

@@ -64,7 +64,8 @@ class Migration(migrations.Migration):
                 ('reschedule_count', models.IntegerField(default=0)),
                 ('cancellation_deadline', models.DateTimeField(blank=True, null=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('rescheduled_from', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='tutorias.tutoringsession')),
+                ('rescheduled_from', models.ForeignKey(blank=True, null=True,
+                 on_delete=django.db.models.deletion.SET_NULL, to='tutorias.tutoringsession')),
                 ('subject', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='tutorias.subject')),
             ],
             options={

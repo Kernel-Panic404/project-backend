@@ -1,8 +1,8 @@
-import pytest
 import jwt
 from unittest.mock import MagicMock
 from usuarios.services import AuthService
 from usuarios.models import Usuario
+
 
 class TestAuthService:
     def test_authenticate_user_success(self, mocker):

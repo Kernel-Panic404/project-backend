@@ -25,7 +25,8 @@ class Migration(migrations.Migration):
                 ('is_active', models.BooleanField(default=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('subject', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='tutorias.subject')),
-                ('teacher', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='questionnaires', to='usuarios.usuario')),
+                ('teacher', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL,
+                 related_name='questionnaires', to='usuarios.usuario')),
             ],
             options={
                 'db_table': 'cuestionario',
@@ -80,7 +81,8 @@ class Migration(migrations.Migration):
                 ('question', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='cuestionarios.question')),
                 ('questionnaire', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='cuestionarios.questionnaire')),
                 ('student', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='usuarios.usuario')),
-                ('selected_option', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='cuestionarios.questionoption')),
+                ('selected_option', models.ForeignKey(blank=True, null=True,
+                 on_delete=django.db.models.deletion.SET_NULL, to='cuestionarios.questionoption')),
             ],
             options={
                 'db_table': 'respuesta_cuestionario',

@@ -1,6 +1,7 @@
 from django.test import TestCase
 from usuarios.models import Rol, Usuario
 
+
 class RolModelTest(TestCase):
     def test_create_role(self):
         rol = Rol.objects.create(nombre='estudiante')
@@ -9,6 +10,7 @@ class RolModelTest(TestCase):
     def test_role_name(self):
         rol = Rol.objects.create(nombre='tutor')
         self.assertEqual(rol.nombre, 'tutor')
+
 
 class UserModelTest(TestCase):
     def setUp(self):

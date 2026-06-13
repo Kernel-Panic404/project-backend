@@ -59,7 +59,7 @@ class Usuario(models.Model):
     activo = models.BooleanField(default=True)
     creado_en = models.DateTimeField(auto_now_add=True)
     actualizado_en = models.DateTimeField(auto_now=True)
-    
+
     @property
     def is_authenticated(self):
         return True
