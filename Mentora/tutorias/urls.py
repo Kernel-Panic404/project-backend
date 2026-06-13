@@ -12,6 +12,7 @@ from .views import (
     AttendanceViewSet,
     StudentHistoryView,
     GenerateReminderView,
+    StudentAttendanceView,
 )
 
 router = DefaultRouter()
@@ -29,4 +30,5 @@ urlpatterns = [
     path("history/student/<int:student_id>/", StudentHistoryView.as_view(), name="student-history"),
     path("reminders/generate/", GenerateReminderView.as_view(), name="generate-reminders"),
     path("notifications/", NotificationListView.as_view(), name="notifications"),
+    path("student-attendance/", StudentAttendanceView.as_view(), name="student-attendance"),
 ]

@@ -95,18 +95,14 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
 
 class StudentHistoryView(generics.ListAPIView):
-    """
-    RF-10: View to retrieve tutoring session history for a specific student.
-    """
+
     serializer_class = TutoringSessionSerializer
     permission_classes = [IsAuthenticated, IsTutor | IsAdmin]
 
     def get_queryset(self):
         student_id = self.kwargs.get('student_id')
-        # Find all participations where this user is an 'estudiante'
         participations = TutoringParticipation.objects.filter(user_id=student_id, role_in_session='estudiante')
         session_ids = participations.values_list('session_id', flat=True)
-        # Return the corresponding sessions
         return TutoringSession.objects.filter(id__in=session_ids).order_by('-date', '-start_time')
 
 class GenerateReminderView(APIView):
@@ -131,3 +127,21 @@ class NotificationListView(generics.ListAPIView):
         return Notification.objects.filter(
             user=self.request.user
         )
+    
+class StudentAttendanceView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        absences = (
+            Attendance.objects
+            .filter(attended=False)
+            .values(
+                "user",
+                "user__nombre",
+                "user__apellido"
+            )
+            .annotate(total_absences=Count("id"))
+        )
+
+        return Response(absences)
