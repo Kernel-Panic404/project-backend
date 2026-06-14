@@ -49,6 +49,25 @@ class TutorSubjectSerializer(serializers.ModelSerializer):
 
 
 class SessionRecordSerializer(serializers.ModelSerializer):
+
+    def validate_grade(self, value):
+
+        if value < 1.0 or value > 5.0:
+            raise serializers.ValidationError(
+                "La calificación debe estar entre 1.0 y 5.0"
+            )
+
+        return value
+
+    def validate_observations(self, value):
+
+        if len(value) > 1000:
+            raise serializers.ValidationError(
+                "La observación no puede superar 1000 caracteres"
+            )
+
+        return value
+
     class Meta:
         model = SessionRecord
         fields = "__all__"
