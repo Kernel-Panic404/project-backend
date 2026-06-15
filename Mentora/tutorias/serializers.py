@@ -74,6 +74,22 @@ class SessionRecordSerializer(serializers.ModelSerializer):
 
 
 class AttendanceSerializer(serializers.ModelSerializer):
+
+    def validate_status(self, value):
+
+        valid_status = [
+            "PRESENTE",
+            "AUSENTE",
+            "TARDE"
+        ]
+
+        if value not in valid_status:
+            raise serializers.ValidationError(
+                "Estado de asistencia inválido"
+            )
+
+        return value
+
     class Meta:
         model = Attendance
         fields = "__all__"
