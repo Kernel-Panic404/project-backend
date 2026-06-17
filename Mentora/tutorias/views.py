@@ -1,3 +1,11 @@
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework import status
+from django.utils import timezone
+
+
+
+
 from rest_framework import viewsets, generics
 from rest_framework.permissions import IsAuthenticated
 
@@ -62,6 +70,91 @@ class TutoringSessionViewSet(viewsets.ModelViewSet):
     queryset = TutoringSession.objects.all()
     serializer_class = TutoringSessionSerializer
     permission_classes = [IsAuthenticated]
+
+    @action(detail=True, methods=["post"])
+    def cancel(self, request, pk=None):
+        session = self.get_object()
+
+        if session.status == "cancelada":
+            return Response(
+                {"error": "La tutoría ya fue cancelada"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if (
+            session.cancellation_deadline
+            and timezone.now() > session.cancellation_deadline
+        ):
+            return Response(
+                {
+                    "error": "Ya pasó el tiempo límite para cancelar la tutoría"
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        reason = request.data.get("cancellation_reason")
+
+        if not reason:
+            return Response(
+                {
+                    "error": "Debe indicar un motivo de cancelación"
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        session.status = "cancelada"
+        session.cancellation_reason = reason
+        session.save()
+
+        return Response(
+            {
+                "message": "Tutoría cancelada correctamente"
+            }
+        )
+
+    @action(detail=True, methods=["post"])
+    def reschedule(self, request, pk=None):
+        session = self.get_object()
+
+        if session.status == "cancelada":
+            return Response(
+                {
+                    "error": "No se puede reprogramar una tutoría cancelada"
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        new_date = request.data.get("date")
+        new_start_time = request.data.get("start_time")
+        new_end_time = request.data.get("end_time")
+
+        if not all([new_date, new_start_time, new_end_time]):
+            return Response(
+                {
+                    "error": "Debe enviar date, start_time y end_time"
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        new_session = TutoringSession.objects.create(
+            subject=session.subject,
+            date=new_date,
+            start_time=new_start_time,
+            end_time=new_end_time,
+            status="agendada",
+            rescheduled_from=session,
+            reschedule_count=session.reschedule_count + 1
+        )
+
+        session.status = "reprogramada"
+        session.save()
+
+        return Response(
+            {
+                "message": "Tutoría reprogramada correctamente",
+                "new_session_id": new_session.id
+            }
+        )
 
 
 class TutoringParticipationViewSet(viewsets.ModelViewSet):
