@@ -18,14 +18,28 @@ class RoleSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     nombre_completo = serializers.SerializerMethodField()
-    rol_display = serializers.CharField(source="get_rol_display", read_only=True)
+    rol_display = serializers.SerializerMethodField()
 
     class Meta:
         model = Usuario
-        fields = ["id", "nombre", "apellido", "correo", "rol", "activo", "creado_en", "nombre_completo"]
+        fields = [
+            "id",
+            "nombre",
+            "apellido",
+            "correo",
+            "rol",
+            "rol_display",
+            "activo",
+            "creado_en",
+            "actualizado_en",
+            "nombre_completo",
+        ]
 
     def get_nombre_completo(self, obj):
         return obj.nombre_completo()
+
+    def get_rol_display(self, obj):
+        return obj.rol.nombre if obj.rol else None
 
 
 class LoginSerializer(serializers.Serializer):
@@ -35,26 +49,43 @@ class LoginSerializer(serializers.Serializer):
     def validate(self, data):
         correo = data.get("correo")
         password = data.get("password")
+
         from .services import AuthService
+
         usuario = AuthService.authenticate_user(correo, password)
+
         if not usuario:
-            raise serializers.ValidationError("Invalid credentials or inactive user.")
+            raise serializers.ValidationError(
+                "Invalid credentials or inactive user."
+            )
+
         data["usuario"] = usuario
         return data
 
 
 class UserCreationSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
+    password = serializers.CharField(
+        write_only=True,
+        min_length=6
+    )
 
     class Meta:
         model = Usuario
-        fields = ["nombre", "apellido", "correo", "password", "rol"]
+        fields = [
+            "nombre",
+            "apellido",
+            "correo",
+            "password",
+            "rol",
+        ]
 
     def create(self, validated_data):
         password = validated_data.pop("password")
+
         usuario = Usuario(**validated_data)
         usuario.set_password(password)
         usuario.save()
+
         return usuario
 
 

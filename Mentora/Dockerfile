@@ -10,21 +10,20 @@ RUN apt-get update && apt-get install -y \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# Copiar y instalar dependencias Python
+# Copiar archivo de dependencias
 COPY requirements.txt .
+
+# Instalar dependencias Python
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar código de la aplicación
+# Copiar el proyecto completo
 COPY . .
 
 # Crear directorios necesarios
 RUN mkdir -p /app/logs /app/staticfiles
 
-# Dar permisos de ejecución al entrypoint
-RUN chmod +x entrypoint.sh
-
-# Exponer puerto 8000 para Django
+# Exponer puerto de Django
 EXPOSE 8000
 
-# Usar el entrypoint que ejecuta migraciones y luego inicia Django
-ENTRYPOINT ["/app/entrypoint.sh"]
+# Iniciar servidor Django
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
