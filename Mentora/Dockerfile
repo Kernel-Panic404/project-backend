@@ -2,15 +2,28 @@
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y gcc libpq-dev && rm -rf /var/lib/apt/lists/*
+# Instalar dependencias del sistema necesarias
+RUN apt-get update && apt-get install -y \
+    gcc \
+    libpq-dev \
+    netcat-traditional \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
 
+# Copiar archivo de dependencias
 COPY requirements.txt .
+
+# Instalar dependencias Python
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copiar el proyecto completo
 COPY . .
 
-RUN touch config/__init__.py usuarios/__init__.py tutorias/__init__.py
+# Crear directorios necesarios
+RUN mkdir -p /app/logs /app/staticfiles
 
+# Exponer puerto de Django
 EXPOSE 8000
 
+# Iniciar servidor Django
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
