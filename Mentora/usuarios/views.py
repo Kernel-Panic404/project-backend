@@ -3,27 +3,33 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
-from .models import Usuario
+from .models import Usuario, Rol
 from .serializers import (
     LoginSerializer,
     UserSerializer,
     UserCreationSerializer,
+    RoleSerializer,
 )
+
 from .services import AuthService
 
 
 class LoginView(APIView):
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
+
         if serializer.is_valid():
             usuario = serializer.validated_data["usuario"]
             tokens = AuthService.generate_tokens(usuario)
+
             response_data = {
                 "access": tokens["access"],
                 "refresh": tokens["refresh"],
                 "user": UserSerializer(usuario).data,
             }
+
             return Response(response_data, status=status.HTTP_200_OK)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -33,25 +39,46 @@ class LogoutView(APIView):
     def post(self, request):
         try:
             refresh_token = request.data.get("refresh")
+
             if refresh_token:
                 AuthService.revoke_token(request.user, refresh_token)
+
             return Response(
                 {"message": "Session closed successfully."},
                 status=status.HTTP_200_OK,
             )
+
         except Exception as e:
             return Response(
-                {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
             )
+
+
+class RoleListView(APIView):
+    """
+    Devuelve todos los roles disponibles.
+    No requiere autenticación.
+    """
+
+    def get(self, request):
+        roles = Rol.objects.all().order_by("nombre")
+        serializer = RoleSerializer(roles, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class UserCreateView(APIView):
     def post(self, request):
         serializer = UserCreationSerializer(data=request.data)
+
         if serializer.is_valid():
             usuario = serializer.save()
-            response_data = UserSerializer(usuario).data
-            return Response(response_data, status=status.HTTP_201_CREATED)
+
+            return Response(
+                UserSerializer(usuario).data,
+                status=status.HTTP_201_CREATED,
+            )
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -70,8 +97,12 @@ class UserDetailView(APIView):
     def get(self, request, user_id):
         try:
             usuario = Usuario.objects.get(pk=user_id, activo=True)
-            serializer = UserSerializer(usuario)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+
+            return Response(
+                UserSerializer(usuario).data,
+                status=status.HTTP_200_OK,
+            )
+
         except Usuario.DoesNotExist:
             return Response(
                 {"error": "User not found."},
@@ -81,16 +112,36 @@ class UserDetailView(APIView):
     def put(self, request, user_id):
         try:
             usuario = Usuario.objects.get(pk=user_id)
-            if request.user.id != user_id and not (request.user.rol and request.user.rol.nombre == "admin"):
+
+            if (
+                request.user.id != user_id
+                and not (
+                    request.user.rol
+                    and request.user.rol.nombre.lower() == "admin"
+                )
+            ):
                 return Response(
-                    {"error": "You do not have permission to update this user."},
+                    {
+                        "error": "You do not have permission to update this user."
+                    },
                     status=status.HTTP_403_FORBIDDEN,
                 )
-            serializer = UserSerializer(usuario, data=request.data, partial=True)
+
+            serializer = UserSerializer(
+                usuario,
+                data=request.data,
+                partial=True,
+            )
+
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         except Usuario.DoesNotExist:
             return Response(
                 {"error": "User not found."},
@@ -103,18 +154,26 @@ class UserDeleteView(APIView):
 
     def delete(self, request, user_id):
         try:
-            if not (request.user.rol and request.user.rol.nombre == "admin"):
+            if not (
+                request.user.rol
+                and request.user.rol.nombre.lower() == "admin"
+            ):
                 return Response(
-                    {"error": "Only administrators can delete users."},
+                    {
+                        "error": "Only administrators can delete users."
+                    },
                     status=status.HTTP_403_FORBIDDEN,
                 )
+
             usuario = Usuario.objects.get(pk=user_id)
             usuario.activo = False
             usuario.save()
+
             return Response(
                 {"message": "User deleted successfully."},
                 status=status.HTTP_200_OK,
             )
+
         except Usuario.DoesNotExist:
             return Response(
                 {"error": "User not found."},

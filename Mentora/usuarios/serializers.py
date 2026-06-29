@@ -45,18 +45,24 @@ class UserSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     correo = serializers.EmailField()
     password = serializers.CharField(write_only=True)
+    rol = serializers.CharField()
 
     def validate(self, data):
         correo = data.get("correo")
         password = data.get("password")
+        rol = data.get("rol")
 
         from .services import AuthService
 
-        usuario = AuthService.authenticate_user(correo, password)
+        usuario = AuthService.authenticate_user(
+            correo,
+            password,
+            rol,
+        )
 
         if not usuario:
             raise serializers.ValidationError(
-                "Invalid credentials or inactive user."
+                "Correo, contraseña o rol incorrectos."
             )
 
         data["usuario"] = usuario

@@ -15,9 +15,9 @@ class AuthService:
         }
 
     @staticmethod
-    def authenticate_user(correo, password):
+    def authenticate_user(correo, password, rol):
         try:
-            usuario = Usuario.objects.get(correo=correo)
+            usuario = Usuario.objects.select_related("rol").get(correo=correo)
         except Usuario.DoesNotExist:
             return None
 
@@ -25,6 +25,14 @@ class AuthService:
             return None
 
         if not usuario.verify_password(password):
+            return None
+
+        
+        if usuario.rol is None:
+            return None
+
+        
+        if usuario.rol.nombre.strip().lower() != rol.strip().lower():
             return None
 
         return usuario
@@ -35,14 +43,23 @@ class AuthService:
 
     @staticmethod
     def is_token_revoked(usuario, token):
-        return TokenRevocado.objects.filter(usuario=usuario, token=token).exists()
+        return TokenRevocado.objects.filter(
+            usuario=usuario,
+            token=token
+        ).exists()
 
     @staticmethod
     def validate_token(token):
         try:
-            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+            payload = jwt.decode(
+                token,
+                settings.SECRET_KEY,
+                algorithms=["HS256"]
+            )
             return payload
+
         except jwt.ExpiredSignatureError:
             return None
+
         except jwt.InvalidTokenError:
             return None
