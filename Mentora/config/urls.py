@@ -9,4 +9,7 @@ urlpatterns = [
 
     # Tutorías
     path("api/tutorias/", include("tutorias.urls")),
+
+    # Cuestionarios
+    path("api/cuestionarios/", include("cuestionarios.urls")),
 ]
