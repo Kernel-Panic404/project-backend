@@ -1,6 +1,7 @@
 from django.db import models
+from django.utils import timezone
+from datetime import datetime, timedelta
 from usuarios.models import Usuario
-
 
 class Subject(models.Model):
     name = models.CharField(max_length=100)
@@ -33,24 +34,100 @@ class AvailabilityException(models.Model):
 
 
 class TutoringSession(models.Model):
-    subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True)
+    subject = models.ForeignKey(
+        Subject,
+        on_delete=models.SET_NULL,
+        null=True,
+    )
+
     date = models.DateField()
+
     start_time = models.TimeField()
+
     end_time = models.TimeField()
-    status = models.CharField(max_length=20, default="agendada")
-    cancellation_reason = models.TextField(null=True, blank=True)
-    rescheduled_from = models.ForeignKey("self", on_delete=models.SET_NULL, null=True, blank=True)
-    reschedule_count = models.IntegerField(default=0)
-    cancellation_deadline = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+
+    status = models.CharField(
+        max_length=20,
+        default="agendada",
+    )
+
+    cancellation_reason = models.TextField(
+        null=True,
+        blank=True,
+    )
+
+    rescheduled_from = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+
+    reschedule_count = models.IntegerField(
+        default=0,
+    )
+
+    cancellation_deadline = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
 
     class Meta:
         db_table = "tutoria"
 
+    def clean(self):
+        """
+        Validaciones de negocio.
+        """
+
+        if self.date < timezone.localdate():
+            raise ValueError(
+                "La tutoría no puede programarse en una fecha pasada."
+            )
+
+        if self.start_time >= self.end_time:
+            raise ValueError(
+                "La hora de inicio debe ser menor que la hora de fin."
+            )
+
+    def save(self, *args, **kwargs):
+
+        self.clean()
+
+        if not self.cancellation_deadline:
+
+            session_datetime = datetime.combine(
+                self.date,
+                self.start_time,
+            )
+
+            session_datetime = timezone.make_aware(
+                session_datetime
+            )
+
+            self.cancellation_deadline = (
+                session_datetime
+                - timedelta(hours=24)
+            )
+
+        super().save(*args, **kwargs)
+
 
 class TutoringParticipation(models.Model):
-    session = models.ForeignKey(TutoringSession, on_delete=models.CASCADE)
-    user = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    session = models.ForeignKey(
+        TutoringSession,
+        on_delete=models.CASCADE,
+        related_name="participaciones"
+    )
+    user = models.ForeignKey(
+        Usuario,
+        on_delete=models.CASCADE,
+        related_name="participaciones"
+    )
     role_in_session = models.CharField(max_length=20)
 
     class Meta:
