@@ -4,8 +4,6 @@ from rest_framework import status
 from django.utils import timezone
 
 
-
-
 from rest_framework import viewsets, generics
 from rest_framework.permissions import IsAuthenticated
 

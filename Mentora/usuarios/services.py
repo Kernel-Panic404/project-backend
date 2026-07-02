@@ -27,11 +27,9 @@ class AuthService:
         if not usuario.verify_password(password):
             return None
 
-        
         if usuario.rol is None:
             return None
 
-        
         if usuario.rol.nombre.strip().lower() != rol.strip().lower():
             return None
 
