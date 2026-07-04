@@ -4,8 +4,6 @@ from rest_framework import status
 from django.utils import timezone
 
 
-
-
 from rest_framework import viewsets, generics
 from rest_framework.permissions import IsAuthenticated
 
@@ -155,6 +153,41 @@ class TutoringSessionViewSet(viewsets.ModelViewSet):
                 "new_session_id": new_session.id
             }
         )
+
+    @action(detail=False, methods=["get"])
+    def my_tutor_sessions(self, request):
+        """Returns sessions where the user is a tutor, including student info."""
+        if not request.user.rol or request.user.rol.nombre not in ['tutor', 'admin']:
+            return Response({"error": "No permission"}, status=status.HTTP_403_FORBIDDEN)
+            
+        # Get participations where this user is the tutor
+        participations = TutoringParticipation.objects.filter(
+            user=request.user, role_in_session='tutor'
+        ).select_related('session', 'session__subject')
+        
+        results = []
+        for p in participations:
+            session = p.session
+            # Find the student participation for this session
+            student_part = TutoringParticipation.objects.filter(
+                session=session, role_in_session='estudiante'
+            ).select_related('user').first()
+            
+            student_id = student_part.user.id if student_part and student_part.user else None
+            student_name = f"{student_part.user.nombre} {student_part.user.apellido}" if student_part and student_part.user else "Desconocido"
+            
+            results.append({
+                "session_id": session.id,
+                "date": session.date,
+                "start_time": session.start_time,
+                "end_time": session.end_time,
+                "status": session.status,
+                "subject_name": session.subject.name if session.subject else "N/A",
+                "student_id": student_id,
+                "student_name": student_name
+            })
+            
+        return Response(results)
 
 
 class TutoringParticipationViewSet(viewsets.ModelViewSet):

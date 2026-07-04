@@ -20,6 +20,7 @@ class Questionnaire(models.Model):
 class Question(models.Model):
     questionnaire = models.ForeignKey(Questionnaire, on_delete=models.CASCADE)
     statement = models.TextField()
+    image = models.ImageField(upload_to='questions/', null=True, blank=True)
     question_type = models.CharField(max_length=30)
     order = models.IntegerField(null=True, blank=True)
     max_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
