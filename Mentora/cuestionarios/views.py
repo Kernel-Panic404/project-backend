@@ -6,13 +6,17 @@ from usuarios.permissions import IsTutor, IsAdmin
 from .models import (
     Questionnaire,
     Question,
-    QuestionOption
+    QuestionOption,
+    QuestionnaireResult,
+    QuestionnaireResponse
 )
 
 from .serializers import (
     QuestionnaireSerializer,
     QuestionSerializer,
-    QuestionOptionSerializer
+    QuestionOptionSerializer,
+    QuestionnaireResultSerializer,
+    QuestionnaireResponseSerializer
 )
 
 
@@ -45,3 +49,40 @@ class QuestionOptionViewSet(viewsets.ModelViewSet):
         if self.action in ['list', 'retrieve']:
             return [IsAuthenticated()]
         return [IsAuthenticated(), (IsTutor | IsAdmin)()]
+
+
+class QuestionnaireResultViewSet(viewsets.ModelViewSet):
+    queryset = QuestionnaireResult.objects.all()
+    serializer_class = QuestionnaireResultSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = QuestionnaireResult.objects.all()
+        student_id = self.request.query_params.get('student_id')
+        questionnaire_id = self.request.query_params.get('questionnaire_id')
+        
+        if student_id:
+            queryset = queryset.filter(student_id=student_id)
+        if questionnaire_id:
+            queryset = queryset.filter(questionnaire_id=questionnaire_id)
+            
+        return queryset
+
+
+class QuestionnaireResponseViewSet(viewsets.ModelViewSet):
+    queryset = QuestionnaireResponse.objects.all()
+    serializer_class = QuestionnaireResponseSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = QuestionnaireResponse.objects.all()
+        student_id = self.request.query_params.get('student_id')
+        questionnaire_id = self.request.query_params.get('questionnaire_id')
+        
+        if student_id:
+            queryset = queryset.filter(student_id=student_id)
+        if questionnaire_id:
+            queryset = queryset.filter(questionnaire_id=questionnaire_id)
+            
+        return queryset
+
