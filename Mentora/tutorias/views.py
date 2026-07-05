@@ -234,16 +234,8 @@ class TutoringSessionViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        if (
-            session.cancellation_deadline
-            and timezone.now() > session.cancellation_deadline
-        ):
-            return Response(
-                {
-                    "error": "Ya pasó el tiempo límite para cancelar la tutoría"
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        # Se elimina la comprobación de cancellation_deadline para permitir cancelación libre flexible
+        pass
 
         reason = request.data.get("cancellation_reason")
 
@@ -467,7 +459,21 @@ class TutoringParticipationViewSet(viewsets.ModelViewSet):
 class TutorSubjectViewSet(viewsets.ModelViewSet):
     queryset = TutorSubject.objects.all()
     serializer_class = TutorSubjectSerializer
-    permission_classes = [IsAuthenticated, IsTutor | IsAdmin]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        tutor_id = self.request.query_params.get('tutor')
+        if tutor_id:
+            return TutorSubject.objects.filter(tutor_id=tutor_id)
+        
+        user = self.request.user
+        role_name = user.rol.nombre if user.rol else ""
+        if role_name in ["admin", "profesor"]:
+            return TutorSubject.objects.all()
+        elif role_name == "tutor":
+            return TutorSubject.objects.filter(tutor=user)
+        # Estudiantes pueden ver todas las relaciones de tutor-materia
+        return TutorSubject.objects.all()
 
 
 class SessionRecordViewSet(viewsets.ModelViewSet):

@@ -58,6 +58,7 @@ class TutoringParticipationSerializer(serializers.ModelSerializer):
 
 
 class TutorSubjectSerializer(serializers.ModelSerializer):
+    subject_name = serializers.ReadOnlyField(source='subject.name')
     class Meta:
         model = TutorSubject
         fields = "__all__"
