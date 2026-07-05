@@ -74,15 +74,51 @@ class SubjectViewSet(viewsets.ModelViewSet):
 class TutorAvailabilityViewSet(viewsets.ModelViewSet):
     queryset = TutorAvailability.objects.all()
     serializer_class = TutorAvailabilitySerializer
-    permission_classes = [IsAuthenticated, IsTutor | IsAdmin]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        if self.request.user.rol and self.request.user.rol.nombre == "admin":
+        user = self.request.user
+        role_name = user.rol.nombre if user.rol else ""
+        
+        # Administradores y profesores pueden ver toda la disponibilidad
+        # Estudiantes también deben poder ver la disponibilidad de todos para poder elegirla y agendar
+        if role_name in ["admin", "profesor", "estudiante"]:
             return TutorAvailability.objects.all()
-        return TutorAvailability.objects.filter(tutor=self.request.user)
+        # Los tutores ven su propia disponibilidad
+        return TutorAvailability.objects.filter(tutor=user)
 
     def perform_create(self, serializer):
-        serializer.save(tutor=self.request.user)
+        user = self.request.user
+        role_name = user.rol.nombre if user.rol else ""
+        # Solo administrador, profesor o el tutor mismo pueden crear disponibilidad
+        if role_name not in ["admin", "profesor", "tutor"]:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("No tienes permisos para configurar disponibilidad.")
+        
+        # Si no es admin/profesor, el tutor se asocia automáticamente a sí mismo
+        target_tutor = self.request.data.get('tutor') or self.request.data.get('tutor_id')
+        if target_tutor and role_name in ["admin", "profesor"]:
+            from usuarios.models import Usuario
+            tutor_user = Usuario.objects.get(pk=target_tutor)
+            serializer.save(tutor=tutor_user)
+        else:
+            serializer.save(tutor=user)
+
+    def perform_update(self, serializer):
+        user = self.request.user
+        role_name = user.rol.nombre if user.rol else ""
+        if role_name not in ["admin", "profesor"] and serializer.instance.tutor != user:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("No tienes permisos para modificar este horario.")
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        user = self.request.user
+        role_name = user.rol.nombre if user.rol else ""
+        if role_name not in ["admin", "profesor"] and instance.tutor != user:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("No tienes permisos para eliminar este horario.")
+        instance.delete()
 
 
 class AvailabilityExceptionViewSet(viewsets.ModelViewSet):
@@ -104,7 +140,63 @@ class TutoringSessionViewSet(viewsets.ModelViewSet):
     serializer_class = TutoringSessionSerializer
     permission_classes = [IsAuthenticated]
 
+    def create(self, request, *args, **kwargs):
+        subject_id = request.data.get('subject_id')
+        tutor_id = request.data.get('tutor_id')
+        date_str = request.data.get('date')
+        start_time_str = request.data.get('start_time')
+        end_time_str = request.data.get('end_time')
+
+        if not all([subject_id, tutor_id, date_str, start_time_str, end_time_str]):
+            return Response({"error": "Faltan campos obligatorios para agendar la tutoría"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Verificar si hay una colisión de horario para el mismo tutor en esa fecha
+        # (status!='cancelada')
+        overlapping_sessions = TutoringSession.objects.filter(
+            date=date_str,
+            start_time__lt=end_time_str,
+            end_time__gt=start_time_str,
+            tutoringparticipation__user_id=tutor_id,
+            tutoringparticipation__role_in_session='tutor'
+        ).exclude(status='cancelada')
+
+        if overlapping_sessions.exists():
+            return Response({"error": "El tutor ya tiene una tutoría programada en este horario o el bloque ya no está disponible"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Crear la tutoría
+        session = TutoringSession.objects.create(
+            subject_id=subject_id,
+            date=date_str,
+            start_time=start_time_str,
+            end_time=end_time_str,
+            status="agendada"
+        )
+
+        # Guardar las participaciones del estudiante y del tutor
+        # Estudiante es el usuario logueado
+        TutoringParticipation.objects.create(
+            session=session,
+            user=request.user,
+            role_in_session='estudiante'
+        )
+
+        # Tutor
+        from usuarios.models import Usuario as UsuarioModel
+        try:
+            tutor_user = UsuarioModel.objects.get(pk=tutor_id)
+            TutoringParticipation.objects.create(
+                session=session,
+                user=tutor_user,
+                role_in_session='tutor'
+            )
+        except UsuarioModel.DoesNotExist:
+            pass
+
+        serializer = self.get_serializer(session)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
     @action(detail=True, methods=["post"])
+
     def cancel(self, request, pk=None):
         session = self.get_object()
 
@@ -235,10 +327,11 @@ class TutoringSessionViewSet(viewsets.ModelViewSet):
     def tutor_report(self, request):
         """Returns statistics for a tutor (logged in tutor or tutor_id query param) and their students."""
         tutor_id = request.query_params.get('tutor_id')
+        from usuarios.models import Usuario as UsuarioModel
         if tutor_id:
             try:
-                tutor = Usuario.objects.get(pk=tutor_id)
-            except Usuario.DoesNotExist:
+                tutor = UsuarioModel.objects.get(pk=tutor_id)
+            except UsuarioModel.DoesNotExist:
                 return Response({"error": "Tutor not found"}, status=status.HTTP_404_NOT_FOUND)
         else:
             tutor = request.user
