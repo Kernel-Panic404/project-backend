@@ -275,7 +275,7 @@ def create_questionnaires(command):
             "is_active": True
         }
     )
-    if created1:
+    if created1 or Question.objects.filter(questionnaire=q1).count() == 0:
         command.stdout.write(command.style.SUCCESS(f"   ✓ Cuestionario: {q1.title}"))
         
         # Pregunta 1 con Imagen
@@ -314,7 +314,7 @@ def create_questionnaires(command):
             "is_active": True
         }
     )
-    if created2:
+    if created2 or Question.objects.filter(questionnaire=q2).count() == 0:
         command.stdout.write(command.style.SUCCESS(f"   ✓ Cuestionario: {q2.title}"))
         
         # Pregunta con Imagen de Física
