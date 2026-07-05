@@ -52,8 +52,9 @@ class SubjectViewSet(viewsets.ModelViewSet):
                 sessions_count = TutoringSession.objects.filter(
                     subject=s,
                     tutoringparticipation__user=tutor,
-                    tutoringparticipation__role_in_session='tutor'
-                ).exclude(status='cancelada').count()
+                    tutoringparticipation__role_in_session='tutor',
+                    status='completada'
+                ).count()
                 
                 tutors_data.append({
                     "tutor_id": tutor.id,

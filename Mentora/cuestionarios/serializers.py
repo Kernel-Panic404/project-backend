@@ -16,12 +16,16 @@ class QuestionOptionSerializer(serializers.ModelSerializer):
 
 
 class QuestionSerializer(serializers.ModelSerializer):
+    options = QuestionOptionSerializer(many=True, read_only=True, source='questionoption_set')
+
     class Meta:
         model = Question
         fields = "__all__"
 
 
 class QuestionnaireSerializer(serializers.ModelSerializer):
+    questions = QuestionSerializer(many=True, read_only=True, source='question_set')
+
     class Meta:
         model = Questionnaire
         fields = "__all__"
