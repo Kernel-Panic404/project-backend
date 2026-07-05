@@ -345,11 +345,11 @@ class StudentProgressView(generics.GenericAPIView):
         session_ids = participations.values_list('session_id', flat=True)
         sessions = TutoringSession.objects.filter(id__in=session_ids)
 
-        # Count completed sessions (status='completada' or date in the past)
-        completed_sessions = sessions.filter(Q(status="completada") | Q(date__lt=date.today()))
+        # Count completed sessions strictly by status
+        completed_sessions = sessions.filter(status="completada")
         total_completed = completed_sessions.count()
 
-        pending_sessions = sessions.filter(status="agendada", date__gte=date.today()).count()
+        pending_sessions = sessions.filter(status="agendada").count()
 
         # Average grade across all completed sessions
         records = SessionRecord.objects.filter(session__in=completed_sessions, grade__isnull=False)
@@ -369,7 +369,7 @@ class StudentProgressView(generics.GenericAPIView):
                 continue
 
             sub_sessions = sessions.filter(subject=subject)
-            sub_completed = sub_sessions.filter(Q(status="completada") | Q(date__lt=date.today()))
+            sub_completed = sub_sessions.filter(status="completada")
             sub_completed_count = sub_completed.count()
             sub_total_count = sub_sessions.count()
 
