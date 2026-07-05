@@ -51,7 +51,7 @@ class SubjectViewSet(viewsets.ModelViewSet):
                     subject=s,
                     tutoringparticipation__user=tutor,
                     tutoringparticipation__role_in_session='tutor'
-                ).count()
+                ).exclude(status='cancelada').count()
                 
                 tutors_data.append({
                     "tutor_id": tutor.id,
