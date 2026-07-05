@@ -1,9 +1,9 @@
 # project-backend
 Repositorio de documentación del proyecto grupal: casos de uso, scripts de BD, diagramas, entregas y asignaciones. Curso Ingeniería de Software 1 — Universidad Nacional de Colombia, 2026-1.
 <img width="1408" height="318" alt="Gemini_Generated_Image_rrrehtrrrehtrrre" src="https://github.com/user-attachments/assets/41fccdc5-2935-4635-a7db-fb1162acf100" />
-#  ☀️kERNEL PANIC - Mentora
+#  kERNEL PANIC - Mentora
 
-### El grupo 🖥️😖🖥️:
+### El grupo :
 | integrante | carrera | correo institucional |
 |---|---|---|
 | GABRIEL BUSTOS MORENO | Ingenieria de Sistemas y Computacion |gbustosm@unal.edu.co|
