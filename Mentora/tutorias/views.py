@@ -489,13 +489,13 @@ class TutorSubjectViewSet(viewsets.ModelViewSet):
 class SessionRecordViewSet(viewsets.ModelViewSet):
     queryset = SessionRecord.objects.all()
     serializer_class = SessionRecordSerializer
-    permission_classes = [IsAuthenticated, IsTutor | IsAdmin]
+    permission_classes = [IsAuthenticated]
 
 
 class AttendanceViewSet(viewsets.ModelViewSet):
     queryset = Attendance.objects.all()
     serializer_class = AttendanceSerializer
-    permission_classes = [IsAuthenticated, IsTutor | IsAdmin]
+    permission_classes = [IsAuthenticated]
 
 
 class StudentHistoryView(generics.ListAPIView):
