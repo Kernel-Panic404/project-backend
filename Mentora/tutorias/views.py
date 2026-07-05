@@ -396,7 +396,7 @@ class StudentProgressView(generics.GenericAPIView):
         avg_grade = records.aggregate(Avg('grade'))['grade__avg']
         avg_grade_val = round(float(avg_grade), 2) if avg_grade is not None else None
 
-        # Group by subjects
+        # Group by subjects (from tutoring sessions)
         subject_ids = sessions.values_list('subject_id', flat=True).distinct()
         subjects_list = []
 
@@ -427,9 +427,32 @@ class StudentProgressView(generics.GenericAPIView):
                 "sessions_completed": sub_completed_count
             })
 
+        # Questionnaire results for this student
+        from cuestionarios.models import QuestionnaireResult
+        q_results = QuestionnaireResult.objects.filter(
+            student_id=student_id
+        ).select_related('questionnaire', 'tutor', 'questionnaire__subject').order_by('-completed_at')
+
+        questionnaire_results = []
+        for qr in q_results:
+            questionnaire_results.append({
+                "id": qr.id,
+                "questionnaire_title": qr.questionnaire.title,
+                "subject_name": qr.questionnaire.subject.name if qr.questionnaire.subject else None,
+                "tutor_name": f"{qr.tutor.nombre} {qr.tutor.apellido}" if qr.tutor else None,
+                "total_score": float(qr.total_score) if qr.total_score is not None else None,
+                "completed_at": qr.completed_at.strftime("%Y-%m-%d")
+            })
+
+        # Average questionnaire score
+        q_scores = [r["total_score"] for r in questionnaire_results if r["total_score"] is not None]
+        avg_q_score = round(sum(q_scores) / len(q_scores), 2) if q_scores else None
+
         return Response({
             "average_grade": avg_grade_val,
             "total_sessions": total_completed,
             "pending_sessions": pending_sessions,
-            "subjects": subjects_list
+            "subjects": subjects_list,
+            "questionnaire_results": questionnaire_results,
+            "average_questionnaire_score": avg_q_score
         })
