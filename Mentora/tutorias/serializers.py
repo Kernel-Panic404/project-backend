@@ -33,6 +33,7 @@ class TutoringSessionSerializer(serializers.ModelSerializer):
     subject_name = serializers.ReadOnlyField(source='subject.name')
     tutor_name = serializers.SerializerMethodField()
     student_name = serializers.SerializerMethodField()
+    tutor_id = serializers.SerializerMethodField()
 
     class Meta:
         model = TutoringSession
@@ -49,6 +50,12 @@ class TutoringSessionSerializer(serializers.ModelSerializer):
         if part and part.user:
             return f"{part.user.nombre} {part.user.apellido}"
         return "Estudiante no asignado"
+
+    def get_tutor_id(self, obj):
+        part = obj.tutoringparticipation_set.filter(role_in_session='tutor').select_related('user').first()
+        if part and part.user:
+            return part.user.id
+        return None
 
 
 class TutoringParticipationSerializer(serializers.ModelSerializer):

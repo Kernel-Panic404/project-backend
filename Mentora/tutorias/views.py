@@ -166,15 +166,15 @@ class TutoringSessionViewSet(viewsets.ModelViewSet):
             return Response({"error": "Formato de fecha inválido"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Buscar disponibilidad activa
-        availability_exists = TutorAvailability.objects.filter(
+        availability_slot = TutorAvailability.objects.filter(
             tutor_id=tutor_id,
             day_of_week=day_of_week_model,
             start_time__lte=start_time_str,
             end_time__gte=end_time_str,
             is_available=True
-        ).exists()
+        ).first()
 
-        if not availability_exists:
+        if not availability_slot:
             return Response({"error": "El tutor no está disponible en este día u horario"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Validar si hay excepciones para ese dia específico (ej. feriado, viaje)
@@ -197,8 +197,8 @@ class TutoringSessionViewSet(viewsets.ModelViewSet):
             tutoringparticipation__role_in_session='tutor'
         ).exclude(status='cancelada')
 
-        if overlapping_sessions.exists():
-            return Response({"error": "El tutor ya tiene una tutoría programada en este horario o el bloque ya no está disponible"}, status=status.HTTP_400_BAD_REQUEST)
+        if overlapping_sessions.count() >= availability_slot.max_capacity:
+            return Response({"error": "El tutor ya tiene los cupos llenos para este horario"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Crear la tutoría
 

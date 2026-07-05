@@ -16,6 +16,7 @@ class TutorAvailability(models.Model):
     day_of_week = models.IntegerField()
     start_time = models.TimeField()
     end_time = models.TimeField()
+    max_capacity = models.IntegerField(default=5)
     is_available = models.BooleanField(default=True)
 
     class Meta:
