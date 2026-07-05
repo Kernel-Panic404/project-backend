@@ -35,6 +35,38 @@ class SubjectViewSet(viewsets.ModelViewSet):
     serializer_class = SubjectSerializer
     permission_classes = [IsAuthenticated]
 
+    @action(detail=False, methods=["get"])
+    def subject_report(self, request):
+        """Returns subjects, showing which tutors teach them and their session counts."""
+        subjects = Subject.objects.all()
+        results = []
+        for s in subjects:
+            tutors_data = []
+            # Find tutors assigned to this subject
+            tutor_subjects = TutorSubject.objects.filter(subject=s).select_related('tutor')
+            for ts in tutor_subjects:
+                tutor = ts.tutor
+                # Count tutoring sessions completed or scheduled by this tutor for this subject
+                sessions_count = TutoringSession.objects.filter(
+                    subject=s,
+                    tutoringparticipation__user=tutor,
+                    tutoringparticipation__role_in_session='tutor'
+                ).count()
+                
+                tutors_data.append({
+                    "tutor_id": tutor.id,
+                    "tutor_name": f"{tutor.nombre} {tutor.apellido}",
+                    "sessions_count": sessions_count
+                })
+            
+            results.append({
+                "subject_id": s.id,
+                "subject_name": s.name,
+                "subject_code": s.code,
+                "tutors": tutors_data
+            })
+        return Response(results)
+
 
 class TutorAvailabilityViewSet(viewsets.ModelViewSet):
     queryset = TutorAvailability.objects.all()
@@ -188,6 +220,72 @@ class TutoringSessionViewSet(viewsets.ModelViewSet):
             })
             
         return Response(results)
+
+    @action(detail=False, methods=["get"])
+    def tutor_report(self, request):
+        """Returns statistics for a tutor (logged in tutor or tutor_id query param) and their students."""
+        tutor_id = request.query_params.get('tutor_id')
+        if tutor_id:
+            try:
+                tutor = Usuario.objects.get(pk=tutor_id)
+            except Usuario.DoesNotExist:
+                return Response({"error": "Tutor not found"}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            tutor = request.user
+            if not tutor.rol or tutor.rol.nombre not in ['tutor', 'admin']:
+                return Response({"error": "No permission"}, status=status.HTTP_403_FORBIDDEN)
+
+        # Get sessions where this user is the tutor
+        participations = TutoringParticipation.objects.filter(
+            user=tutor, role_in_session='tutor'
+        ).select_related('session')
+        
+        session_ids = [p.session.id for p in participations]
+        
+        # Group by student
+        student_sessions = {}
+        student_parts = TutoringParticipation.objects.filter(
+            session_id__in=session_ids, role_in_session='estudiante'
+        ).select_related('user', 'session')
+
+        for sp in student_parts:
+            student = sp.user
+            if student.id not in student_sessions:
+                student_sessions[student.id] = {
+                    "student_name": f"{student.nombre} {student.apellido}",
+                    "student_email": student.correo,
+                    "sessions": []
+                }
+            student_sessions[student.id]["sessions"].append(sp.session)
+
+        results = []
+        for s_id, data in student_sessions.items():
+            sessions = data["sessions"]
+            total_sessions = len(sessions)
+            
+            # Attendance
+            attendances = Attendance.objects.filter(session__in=sessions, user_id=s_id)
+            attended_count = attendances.filter(attended=True).count()
+            attendance_rate = (attended_count / total_sessions) * 100 if total_sessions > 0 else 0
+
+            # Grades
+            records = SessionRecord.objects.filter(session__in=sessions, grade__isnull=False)
+            grades = [r.grade for r in records]
+            avg_grade = sum(grades) / len(grades) if len(grades) > 0 else None
+
+            results.append({
+                "student_id": s_id,
+                "student_name": data["student_name"],
+                "student_email": data["student_email"],
+                "total_sessions": total_sessions,
+                "attendance_rate": round(attendance_rate, 2),
+                "average_grade": round(float(avg_grade), 2) if avg_grade is not None else None
+            })
+
+        return Response({
+            "tutor_name": f"{tutor.nombre} {tutor.apellido}",
+            "students": results
+        })
 
 
 class TutoringParticipationViewSet(viewsets.ModelViewSet):
