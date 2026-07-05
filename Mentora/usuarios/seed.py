@@ -254,8 +254,8 @@ def create_questionnaires(command):
     command.stdout.write("\nCreando cuestionarios de prueba con imágenes...")
     
     # Descargar imágenes de prueba en la carpeta media del backend
-    download_dummy_image("math.jpg", "https://fastly.picsum.photos/id/1010/400/300.jpg?hmac=n_F0fC1i91o23pM2-uN-sO19U89D6Z1T8fC-T2m55fE")
-    download_dummy_image("physics.jpg", "https://fastly.picsum.photos/id/1025/400/300.jpg?hmac=n_LgH0dK1wB2pY1R8T9U0C-T2m55fE")
+    download_dummy_image("math.png", "https://fastly.picsum.photos/id/1010/400/300.jpg?hmac=n_F0fC1i91o23pM2-uN-sO19U89D6Z1T8fC-T2m55fE")
+    download_dummy_image("physics.png", "https://fastly.picsum.photos/id/1025/400/300.jpg?hmac=n_LgH0dK1wB2pY1R8T9U0C-T2m55fE")
 
     tutor = Usuario.objects.filter(rol__nombre="tutor").first()
     materias = Subject.objects.all()
@@ -282,7 +282,7 @@ def create_questionnaires(command):
         p1 = Question.objects.create(
             questionnaire=q1,
             statement="Dada la siguiente matriz expuesta en la imagen, ¿cuál es su determinante?",
-            image="questions/math.jpg",
+            image="questions/math.png",
             question_type="multiple_choice",
             order=1,
             max_score=5.0
@@ -321,7 +321,7 @@ def create_questionnaires(command):
         p3 = Question.objects.create(
             questionnaire=q2,
             statement="De acuerdo con la trayectoria y el diagrama de la imagen, ¿cuál es la aceleración en el punto máximo?",
-            image="questions/physics.jpg",
+            image="questions/physics.png",
             question_type="multiple_choice",
             order=1,
             max_score=10.0

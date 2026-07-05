@@ -8,6 +8,7 @@ from usuarios.seed import (
     create_availability,
     create_sessions,
     create_participations,
+    create_questionnaires,
 )
 
 
@@ -39,6 +40,8 @@ class Command(BaseCommand):
         create_sessions(self)
 
         create_participations(self)
+
+        create_questionnaires(self)
 
         self.stdout.write("")
         self.stdout.write("=" * 60)
