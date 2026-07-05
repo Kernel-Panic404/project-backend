@@ -74,6 +74,11 @@ class UserCreationSerializer(serializers.ModelSerializer):
         write_only=True,
         min_length=6
     )
+    rol = serializers.PrimaryKeyRelatedField(
+        queryset=Rol.objects.all(),
+        required=False,
+        allow_null=True
+    )
 
     class Meta:
         model = Usuario
@@ -87,6 +92,21 @@ class UserCreationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         password = validated_data.pop("password")
+
+        # Verificar si quien hace la petición es administrador
+        request = self.context.get('request')
+        is_admin = False
+        if request and request.user and request.user.is_authenticated:
+            if request.user.rol and request.user.rol.nombre == "admin":
+                is_admin = True
+
+        # Si no es admin, asignamos automáticamente el rol 'estudiante'
+        if not is_admin:
+            try:
+                estudiante_rol = Rol.objects.get(nombre="estudiante")
+                validated_data["rol"] = estudiante_rol
+            except Rol.DoesNotExist:
+                pass
 
         usuario = Usuario(**validated_data)
         usuario.set_password(password)
