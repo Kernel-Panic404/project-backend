@@ -30,12 +30,17 @@ class AvailabilityExceptionSerializer(serializers.ModelSerializer):
 
 
 class TutoringSessionSerializer(serializers.ModelSerializer):
+    subject_name = serializers.ReadOnlyField(source='subject.name')
+    tutor_name = serializers.ReadOnlyField(source='tutor.nombre_completo')
+
     class Meta:
         model = TutoringSession
         fields = "__all__"
 
 
 class TutoringParticipationSerializer(serializers.ModelSerializer):
+    student_name = serializers.ReadOnlyField(source='student.nombre_completo')
+
     class Meta:
         model = TutoringParticipation
         fields = "__all__"
