@@ -24,7 +24,7 @@ router.register(
 )
 
 router.register(
-    r'options',
+    r'question-options',
     QuestionOptionViewSet,
     basename='option'
 )
