@@ -79,8 +79,13 @@ class TutorAvailabilityViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         role_name = user.rol.nombre if user.rol else ""
-        
-        # Administradores y profesores pueden ver toda la disponibilidad
+        tutor_id_param = self.request.query_params.get('tutor')
+
+        # Si se pasa ?tutor=ID, filtramos por ese tutor específico
+        if tutor_id_param:
+            return TutorAvailability.objects.filter(tutor_id=tutor_id_param)
+
+        # Administradores y profesores pueden ver toda la disponibilidad si no hay filtro
         # Estudiantes también deben poder ver la disponibilidad de todos para poder elegirla y agendar
         if role_name in ["admin", "profesor", "estudiante"]:
             return TutorAvailability.objects.all()
@@ -150,6 +155,28 @@ class TutoringSessionViewSet(viewsets.ModelViewSet):
         if not all([subject_id, tutor_id, date_str, start_time_str, end_time_str]):
             return Response({"error": "Faltan campos obligatorios para agendar la tutoría"}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Validar disponibilidad real del tutor en el día de la semana correspondiente
+        from datetime import datetime as dt
+        try:
+            parsed_date = dt.strptime(date_str, "%Y-%m-%d")
+            # En python weekday() va de 0 (Lunes) a 6 (Domingo). 
+            # El modelo TutorAvailability va de 1 (Lunes) a 7 (Domingo).
+            day_of_week_model = parsed_date.weekday() + 1
+        except ValueError:
+            return Response({"error": "Formato de fecha inválido"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Buscar disponibilidad activa
+        availability_exists = TutorAvailability.objects.filter(
+            tutor_id=tutor_id,
+            day_of_week=day_of_week_model,
+            start_time__lte=start_time_str,
+            end_time__gte=end_time_str,
+            is_available=True
+        ).exists()
+
+        if not availability_exists:
+            return Response({"error": "El tutor no está disponible en este día u horario"}, status=status.HTTP_400_BAD_REQUEST)
+
         # Verificar si hay una colisión de horario para el mismo tutor en esa fecha
         # (status!='cancelada')
         overlapping_sessions = TutoringSession.objects.filter(
@@ -164,6 +191,7 @@ class TutoringSessionViewSet(viewsets.ModelViewSet):
             return Response({"error": "El tutor ya tiene una tutoría programada en este horario o el bloque ya no está disponible"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Crear la tutoría
+
         session = TutoringSession.objects.create(
             subject_id=subject_id,
             date=date_str,

@@ -31,16 +31,27 @@ class AvailabilityExceptionSerializer(serializers.ModelSerializer):
 
 class TutoringSessionSerializer(serializers.ModelSerializer):
     subject_name = serializers.ReadOnlyField(source='subject.name')
-    tutor_name = serializers.ReadOnlyField(source='tutor.nombre_completo')
+    tutor_name = serializers.SerializerMethodField()
+    student_name = serializers.SerializerMethodField()
 
     class Meta:
         model = TutoringSession
         fields = "__all__"
 
+    def get_tutor_name(self, obj):
+        part = obj.tutoringparticipation_set.filter(role_in_session='tutor').select_related('user').first()
+        if part and part.user:
+            return f"{part.user.nombre} {part.user.apellido}"
+        return "Tutor no asignado"
+
+    def get_student_name(self, obj):
+        part = obj.tutoringparticipation_set.filter(role_in_session='estudiante').select_related('user').first()
+        if part and part.user:
+            return f"{part.user.nombre} {part.user.apellido}"
+        return "Estudiante no asignado"
+
 
 class TutoringParticipationSerializer(serializers.ModelSerializer):
-    student_name = serializers.ReadOnlyField(source='student.nombre_completo')
-
     class Meta:
         model = TutoringParticipation
         fields = "__all__"
