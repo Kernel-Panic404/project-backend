@@ -25,6 +25,7 @@ class QuestionSerializer(serializers.ModelSerializer):
 
 class QuestionnaireSerializer(serializers.ModelSerializer):
     questions = QuestionSerializer(many=True, read_only=True, source='question_set')
+    subject_name = serializers.CharField(source='subject.name', read_only=True)
 
     class Meta:
         model = Questionnaire
