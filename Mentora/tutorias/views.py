@@ -2,6 +2,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
+from datetime import date
+from django.db.models import Avg, Q
 
 
 from rest_framework import viewsets, generics
@@ -326,3 +328,61 @@ class StudentHistoryView(generics.ListAPIView):
         session_ids = participations.values_list('session_id', flat=True)
         # Return the corresponding sessions
         return TutoringSession.objects.filter(id__in=session_ids).order_by('-date', '-start_time')
+
+
+class StudentProgressView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, student_id):
+        participations = TutoringParticipation.objects.filter(user_id=student_id, role_in_session='estudiante')
+        session_ids = participations.values_list('session_id', flat=True)
+        sessions = TutoringSession.objects.filter(id__in=session_ids)
+
+        # Count completed sessions (status='completada' or date in the past)
+        completed_sessions = sessions.filter(Q(status="completada") | Q(date__lt=date.today()))
+        total_completed = completed_sessions.count()
+
+        pending_sessions = sessions.filter(status="agendada", date__gte=date.today()).count()
+
+        # Average grade across all completed sessions
+        records = SessionRecord.objects.filter(session__in=completed_sessions, grade__isnull=False)
+        avg_grade = records.aggregate(Avg('grade'))['grade__avg']
+        avg_grade_val = round(float(avg_grade), 2) if avg_grade is not None else None
+
+        # Group by subjects
+        subject_ids = sessions.values_list('subject_id', flat=True).distinct()
+        subjects_list = []
+
+        for sub_id in subject_ids:
+            if not sub_id:
+                continue
+            try:
+                subject = Subject.objects.get(pk=sub_id)
+            except Subject.DoesNotExist:
+                continue
+
+            sub_sessions = sessions.filter(subject=subject)
+            sub_completed = sub_sessions.filter(Q(status="completada") | Q(date__lt=date.today()))
+            sub_completed_count = sub_completed.count()
+            sub_total_count = sub_sessions.count()
+
+            sub_records = SessionRecord.objects.filter(session__in=sub_completed, grade__isnull=False)
+            sub_avg = sub_records.aggregate(Avg('grade'))['grade__avg']
+            sub_grade_val = round(float(sub_avg), 2) if sub_avg is not None else None
+
+            percentage = int((sub_completed_count / sub_total_count) * 100) if sub_total_count > 0 else 0
+
+            subjects_list.append({
+                "id": subject.id,
+                "name": subject.name,
+                "grade": sub_grade_val,
+                "percentage": percentage,
+                "sessions_completed": sub_completed_count
+            })
+
+        return Response({
+            "average_grade": avg_grade_val,
+            "total_sessions": total_completed,
+            "pending_sessions": pending_sessions,
+            "subjects": subjects_list
+        })

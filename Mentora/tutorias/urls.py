@@ -10,6 +10,7 @@ from .views import (
     SessionRecordViewSet,
     AttendanceViewSet,
     StudentHistoryView,
+    StudentProgressView,
 )
 
 router = DefaultRouter()
@@ -25,4 +26,5 @@ router.register(r"attendance", AttendanceViewSet)
 urlpatterns = [
     path("", include(router.urls)),
     path("history/student/<int:student_id>/", StudentHistoryView.as_view(), name="student-history"),
+    path("progress/student/<int:student_id>/", StudentProgressView.as_view(), name="student-progress"),
 ]
