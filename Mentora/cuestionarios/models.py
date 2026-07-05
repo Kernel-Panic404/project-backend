@@ -1,6 +1,6 @@
 from django.db import models
 from usuarios.models import Usuario
-from tutorias.models import Subject
+from tutorias.models import Subject, TutoringParticipation
 
 
 class Questionnaire(models.Model):
@@ -40,7 +40,8 @@ class QuestionOption(models.Model):
 
 class QuestionnaireResult(models.Model):
     questionnaire = models.ForeignKey(Questionnaire, on_delete=models.CASCADE)
-    student = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    student = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='questionnaire_results')
+    tutor = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, blank=True, related_name='questionnaire_results_as_tutor')
     total_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     completed_at = models.DateTimeField(auto_now_add=True)
 

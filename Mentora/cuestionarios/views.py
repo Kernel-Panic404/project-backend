@@ -36,6 +36,7 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
     def submit(self, request):
         questionnaire_id = request.data.get('questionnaire_id')
         answers = request.data.get('answers', {})
+        tutor_id = request.data.get('tutor_id')  # Tutor asociado al resultado
 
         try:
             questionnaire = Questionnaire.objects.get(pk=questionnaire_id)
@@ -43,7 +44,8 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
             return Response({"error": "Questionnaire not found"}, status=status.HTTP_404_NOT_FOUND)
 
         student = request.user
-        total_score = 0.0
+        total_raw_score = 0.0
+        total_max_score = 0.0
 
         # Loop through questions of the questionnaire
         questions = Question.objects.filter(questionnaire=questionnaire)
@@ -62,6 +64,7 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
             # Determine correct option
             is_correct = False
             max_score = float(q.max_score) if q.max_score is not None else 1.0
+            total_max_score += max_score
 
             if q.question_type in ['multiple_choice', 'boolean']:
                 if q.question_type == 'multiple_choice':
@@ -73,7 +76,11 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
                     except (QuestionOption.DoesNotExist, ValueError):
                         pass
                 elif q.question_type == 'boolean':
-                    opt_text = "Verdadero" if ans_val is True else "Falso"
+                    # Frontend envía True/False; buscar la opción correcta por texto
+                    if ans_val is True or str(ans_val).lower() in ['true', 'verdadero', 'si', 'sí']:
+                        opt_text = "Verdadero"
+                    else:
+                        opt_text = "Falso"
                     try:
                         selected_opt = QuestionOption.objects.get(text__iexact=opt_text, question=q)
                         response.selected_option = selected_opt
@@ -81,30 +88,53 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
                             is_correct = True
                     except QuestionOption.DoesNotExist:
                         pass
-                
+
                 response.score = max_score if is_correct else 0.0
-                total_score += float(response.score)
+                total_raw_score += float(response.score)
             else:
                 response.text_response = str(ans_val)
                 if q.question_type == 'rating':
-                    response.score = max_score
-                    total_score += max_score
+                    # rating: el estudiante elige 1-5, se normaliza sobre max_score
+                    try:
+                        rating_val = float(ans_val)
+                        normalized = (rating_val / 5.0) * max_score
+                        response.score = round(normalized, 2)
+                        total_raw_score += float(response.score)
+                    except (ValueError, TypeError):
+                        response.score = None
                 else:
                     response.score = None
 
             response.save()
 
+        # Normalizar la nota final a escala de 10
+        if total_max_score > 0:
+            normalized_score = round((total_raw_score / total_max_score) * 10, 2)
+        else:
+            normalized_score = 0.0
+
+        # Resolver tutor
+        tutor = None
+        if tutor_id:
+            from usuarios.models import Usuario as UsuarioModel
+            try:
+                tutor = UsuarioModel.objects.get(pk=tutor_id)
+            except UsuarioModel.DoesNotExist:
+                pass
+
         # Save result
         result = QuestionnaireResult.objects.create(
             questionnaire=questionnaire,
             student=student,
-            total_score=total_score
+            tutor=tutor,
+            total_score=normalized_score
         )
 
         return Response({
             "message": "Questionnaire submitted successfully",
             "result_id": result.id,
-            "total_score": total_score
+            "total_score": normalized_score,
+            "total_score_display": f"{normalized_score}/10"
         }, status=status.HTTP_201_CREATED)
 
 

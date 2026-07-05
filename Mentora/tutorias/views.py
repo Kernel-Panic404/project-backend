@@ -327,7 +327,7 @@ class StudentHistoryView(generics.ListAPIView):
     RF-10: View to retrieve tutoring session history for a specific student.
     """
     serializer_class = TutoringSessionSerializer
-    permission_classes = [IsAuthenticated, IsTutor | IsAdmin]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         student_id = self.kwargs.get('student_id')

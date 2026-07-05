@@ -35,6 +35,12 @@ class QuestionnaireSerializer(serializers.ModelSerializer):
 class QuestionnaireResultSerializer(serializers.ModelSerializer):
     student_name = serializers.ReadOnlyField(source='student.nombre_completo')
     questionnaire_title = serializers.ReadOnlyField(source='questionnaire.title')
+    tutor_name = serializers.SerializerMethodField()
+
+    def get_tutor_name(self, obj):
+        if obj.tutor:
+            return f"{obj.tutor.nombre} {obj.tutor.apellido}"
+        return None
 
     class Meta:
         model = QuestionnaireResult
