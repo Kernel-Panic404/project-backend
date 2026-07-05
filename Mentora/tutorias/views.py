@@ -252,7 +252,7 @@ class TutoringSessionViewSet(viewsets.ModelViewSet):
         
         session_ids = [p.session.id for p in participations]
         
-        # Group by student
+        # Group by student from tutoring sessions
         student_sessions = {}
         student_parts = TutoringParticipation.objects.filter(
             session_id__in=session_ids, role_in_session='estudiante'
@@ -278,10 +278,16 @@ class TutoringSessionViewSet(viewsets.ModelViewSet):
             attended_count = attendances.filter(attended=True).count()
             attendance_rate = (attended_count / total_sessions) * 100 if total_sessions > 0 else 0
 
-            # Grades
+            # Grades from session records
             records = SessionRecord.objects.filter(session__in=sessions, grade__isnull=False)
             grades = [r.grade for r in records]
             avg_grade = sum(grades) / len(grades) if len(grades) > 0 else None
+
+            # Questionnaire results for this student linked to this tutor
+            from cuestionarios.models import QuestionnaireResult
+            q_results = QuestionnaireResult.objects.filter(student_id=s_id, tutor=tutor)
+            q_scores = [float(r.total_score) for r in q_results if r.total_score is not None]
+            avg_questionnaire_score = round(sum(q_scores) / len(q_scores), 2) if q_scores else None
 
             results.append({
                 "student_id": s_id,
@@ -289,7 +295,42 @@ class TutoringSessionViewSet(viewsets.ModelViewSet):
                 "student_email": data["student_email"],
                 "total_sessions": total_sessions,
                 "attendance_rate": round(attendance_rate, 2),
-                "average_grade": round(float(avg_grade), 2) if avg_grade is not None else None
+                "average_grade": round(float(avg_grade), 2) if avg_grade is not None else None,
+                "questionnaire_count": len(q_scores),
+                "average_questionnaire_score": avg_questionnaire_score
+            })
+
+        # Also include students who responded questionnaires for this tutor but have no sessions
+        from cuestionarios.models import QuestionnaireResult
+        q_student_ids_with_sessions = set(student_sessions.keys())
+        extra_q_results = QuestionnaireResult.objects.filter(
+            tutor=tutor
+        ).select_related('student').exclude(student_id__in=q_student_ids_with_sessions)
+
+        extra_students = {}
+        for qr in extra_q_results:
+            student = qr.student
+            if student.id not in extra_students:
+                extra_students[student.id] = {
+                    "student_name": f"{student.nombre} {student.apellido}",
+                    "student_email": student.correo,
+                    "scores": []
+                }
+            if qr.total_score is not None:
+                extra_students[student.id]["scores"].append(float(qr.total_score))
+
+        for s_id, data in extra_students.items():
+            scores = data["scores"]
+            avg_q = round(sum(scores) / len(scores), 2) if scores else None
+            results.append({
+                "student_id": s_id,
+                "student_name": data["student_name"],
+                "student_email": data["student_email"],
+                "total_sessions": 0,
+                "attendance_rate": 0,
+                "average_grade": None,
+                "questionnaire_count": len(scores),
+                "average_questionnaire_score": avg_q
             })
 
         return Response({
@@ -301,8 +342,6 @@ class TutoringSessionViewSet(viewsets.ModelViewSet):
 class TutoringParticipationViewSet(viewsets.ModelViewSet):
     queryset = TutoringParticipation.objects.all()
     serializer_class = TutoringParticipationSerializer
-    permission_classes = [IsAuthenticated]
-
 
 class TutorSubjectViewSet(viewsets.ModelViewSet):
     queryset = TutorSubject.objects.all()
