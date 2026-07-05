@@ -194,10 +194,17 @@ class TutoringSessionViewSet(viewsets.ModelViewSet):
         if not request.user.rol or request.user.rol.nombre not in ['tutor', 'admin']:
             return Response({"error": "No permission"}, status=status.HTTP_403_FORBIDDEN)
             
-        # Get participations where this user is the tutor
-        participations = TutoringParticipation.objects.filter(
-            user=request.user, role_in_session='tutor'
-        ).select_related('session', 'session__subject')
+        # Get participations where role is tutor. If admin/profesor, return all. Otherwise, filter by logged-in tutor.
+        is_admin_or_prof = request.user.rol and request.user.rol.nombre in ['admin', 'profesor']
+        
+        if is_admin_or_prof:
+            participations = TutoringParticipation.objects.filter(
+                role_in_session='tutor'
+            ).select_related('session', 'session__subject')
+        else:
+            participations = TutoringParticipation.objects.filter(
+                user=request.user, role_in_session='tutor'
+            ).select_related('session', 'session__subject')
         
         results = []
         for p in participations:
