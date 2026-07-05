@@ -177,6 +177,16 @@ class TutoringSessionViewSet(viewsets.ModelViewSet):
         if not availability_exists:
             return Response({"error": "El tutor no está disponible en este día u horario"}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Validar si hay excepciones para ese dia específico (ej. feriado, viaje)
+        exception_exists = AvailabilityException.objects.filter(
+            tutor_id=tutor_id,
+            exception_date=date_str,
+            is_available=False
+        ).exists()
+
+        if exception_exists:
+            return Response({"error": "El tutor ha marcado este día específico como NO disponible por motivos personales/festivos"}, status=status.HTTP_400_BAD_REQUEST)
+
         # Verificar si hay una colisión de horario para el mismo tutor en esa fecha
         # (status!='cancelada')
         overlapping_sessions = TutoringSession.objects.filter(
