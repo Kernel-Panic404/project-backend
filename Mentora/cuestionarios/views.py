@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 
-from usuarios.permissions import IsTutor, IsAdmin
+from usuarios.permissions import IsTutor, IsAdmin, IsProfesor
 
 from .models import (
     Questionnaire,
@@ -30,7 +30,7 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
         """Cualquiera autenticado puede listar/ver/responder. Solo tutor o admin puede crear/editar/borrar."""
         if self.action in ['list', 'retrieve', 'submit']:
             return [IsAuthenticated()]
-        return [IsAuthenticated(), (IsTutor | IsAdmin)()]
+        return [IsAuthenticated(), (IsTutor | IsAdmin | IsProfesor)()]
 
     @action(detail=False, methods=['post'])
     def submit(self, request):
@@ -145,7 +145,7 @@ class QuestionViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             return [IsAuthenticated()]
-        return [IsAuthenticated(), (IsTutor | IsAdmin)()]
+        return [IsAuthenticated(), (IsTutor | IsAdmin | IsProfesor)()]
 
 
 class QuestionOptionViewSet(viewsets.ModelViewSet):
@@ -155,7 +155,7 @@ class QuestionOptionViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             return [IsAuthenticated()]
-        return [IsAuthenticated(), (IsTutor | IsAdmin)()]
+        return [IsAuthenticated(), (IsTutor | IsAdmin | IsProfesor)()]
 
 
 class QuestionnaireResultViewSet(viewsets.ModelViewSet):
