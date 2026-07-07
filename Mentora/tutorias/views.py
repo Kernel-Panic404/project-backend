@@ -291,6 +291,58 @@ class TutoringSessionViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # Buscar el tutor asignado a la sesión actual
+        tutor_participation = session.tutoringparticipation_set.filter(role_in_session='tutor').first()
+        if not tutor_participation:
+            return Response(
+                {"error": "No se encontró un tutor asociado a esta tutoría"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        tutor_id = tutor_participation.user_id
+
+        # Validar disponibilidad del tutor en el día de la semana correspondiente
+        from datetime import datetime as dt
+        try:
+            parsed_date = dt.strptime(new_date, "%Y-%m-%d")
+            day_of_week_model = parsed_date.weekday() + 1
+        except ValueError:
+            return Response({"error": "Formato de fecha inválido"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Buscar disponibilidad activa del tutor
+        availability_slot = TutorAvailability.objects.filter(
+            tutor_id=tutor_id,
+            day_of_week=day_of_week_model,
+            start_time__lte=new_start_time,
+            end_time__gte=new_end_time,
+            is_available=True
+        ).first()
+
+        if not availability_slot:
+            return Response({"error": "El tutor no está disponible en este día u horario para reprogramar"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validar si hay excepciones para ese dia específico
+        exception_exists = AvailabilityException.objects.filter(
+            tutor_id=tutor_id,
+            exception_date=new_date,
+            is_available=False
+        ).exists()
+
+        if exception_exists:
+            return Response({"error": "El tutor ha marcado este día específico como NO disponible"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Verificar si hay una colisión de horario y excedente de capacidad
+        overlapping_sessions = TutoringSession.objects.filter(
+            date=new_date,
+            start_time__lt=new_end_time,
+            end_time__gt=new_start_time,
+            tutoringparticipation__user_id=tutor_id,
+            tutoringparticipation__role_in_session='tutor'
+        ).exclude(status='cancelada')
+
+        if overlapping_sessions.count() >= availability_slot.max_capacity:
+            return Response({"error": "El tutor ya tiene los cupos llenos para este horario"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Crear la nueva tutoría
         new_session = TutoringSession.objects.create(
             subject=session.subject,
             date=new_date,
@@ -301,6 +353,15 @@ class TutoringSessionViewSet(viewsets.ModelViewSet):
             reschedule_count=session.reschedule_count + 1
         )
 
+        # Copiar las participaciones de la tutoría anterior a la nueva
+        for part in session.tutoringparticipation_set.all():
+            TutoringParticipation.objects.create(
+                session=new_session,
+                user=part.user,
+                role_in_session=part.role_in_session
+            )
+
+        # Cambiar estado de la tutoría anterior a "reprogramada"
         session.status = "reprogramada"
         session.save()
 
