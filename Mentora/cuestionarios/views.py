@@ -49,6 +49,11 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
 
         # Loop through questions of the questionnaire
         questions = Question.objects.filter(questionnaire=questionnaire)
+        if not questions.exists():
+            return Response(
+                {"error": "No se puede responder un cuestionario que no tiene preguntas."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         for q in questions:
             ans_val = answers.get(str(q.id))
