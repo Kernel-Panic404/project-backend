@@ -9,7 +9,7 @@ from django.db.models import Avg, Q
 from rest_framework import viewsets, generics
 from rest_framework.permissions import IsAuthenticated
 
-from usuarios.permissions import IsTutor, IsAdmin
+from usuarios.permissions import IsTutor, IsAdmin, IsProfesor
 from .models import (
     Subject,
     TutorAvailability,
@@ -129,15 +129,18 @@ class TutorAvailabilityViewSet(viewsets.ModelViewSet):
 class AvailabilityExceptionViewSet(viewsets.ModelViewSet):
     queryset = AvailabilityException.objects.all()
     serializer_class = AvailabilityExceptionSerializer
-    permission_classes = [IsAuthenticated, IsTutor | IsAdmin]
+    permission_classes = [IsAuthenticated, IsTutor | IsAdmin | IsProfesor]
 
     def get_queryset(self):
-        if self.request.user.rol and self.request.user.rol.nombre == "admin":
+        if self.request.user.rol and self.request.user.rol.nombre in ["admin", "profesor"]:
             return AvailabilityException.objects.all()
         return AvailabilityException.objects.filter(tutor=self.request.user)
 
     def perform_create(self, serializer):
-        serializer.save(tutor=self.request.user)
+        if self.request.user.rol and self.request.user.rol.nombre in ["admin", "profesor"]:
+            serializer.save()
+        else:
+            serializer.save(tutor=self.request.user)
 
 
 class TutoringSessionViewSet(viewsets.ModelViewSet):
